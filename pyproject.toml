@@ -6,7 +6,6 @@ authors = ["Hassan Abouelela <hassan@hassanamr.com>"]
 license = "GPL-3.0-or-later"
 readme = "README.md"
 package-mode = true
-packages = [{ include = "src" }]
 homepage = "https://github.com/HassanAbouelela/aws-lambda-cli"
 repository = "https://github.com/HassanAbouelela/aws-lambda-cli"
 keywords = ["aws", "lambda", "serverless", "botocore", "boto3"]
@@ -33,4 +32,4 @@ click = "^8"
 boto3-stubs-lite = {version = "*", extras = ["lambda", "boto3"]}
 
 [tool.poetry.scripts]
-lambda = "src.cli:cli"
+lambda = "aws_lambda_cli.cli:cli"

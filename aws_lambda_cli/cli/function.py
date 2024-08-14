@@ -6,7 +6,7 @@ from pathlib import Path
 import click
 from boto3.session import Session
 
-from src import build, utils
+from aws_lambda_cli import build, utils
 
 logger = logging.getLogger(__name__)
 OPT_STR = typing.Optional[str]
