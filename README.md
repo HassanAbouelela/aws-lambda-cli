@@ -31,12 +31,12 @@ See section 9 of the license for details.
 <a id="examples"></a>
 - Build, upload, and publish `main.py` to the function `Test`:
 ```shell
-lambda Test build.py --publish
+lambda Test main.py --publish
 ```
 
 - Use an S3 bucket called `resources`:
 ```shell
-lambda Test build.py --aws_s3_bucket resources
+lambda Test main.py --aws_s3_bucket resources
 ```
 
 - Upload a project folder:
