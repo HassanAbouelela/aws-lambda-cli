@@ -4,36 +4,14 @@ import typing
 from pathlib import Path
 
 import click
-from boto3.session import Session
 
 from aws_lambda_cli import build, utils
+from aws_lambda_cli.cli.root import CLIContext, OPT_STR, cli
 
 logger = logging.getLogger(__name__)
-OPT_STR = typing.Optional[str]
 
 
-class ClickLogger(logging.Handler):
-    def emit(self, record: logging.LogRecord) -> None:
-        prefix = f"[{record.levelname}]: "
-        level = record.levelno
-        bg = None
-        if level == logging.DEBUG:
-            color = "bright_black"
-        elif level == logging.INFO:
-            prefix = ""
-            color = "bright_green"
-        elif level == logging.WARNING:
-            color = "yellow"
-        elif level == logging.ERROR:
-            color = "red"
-        else:
-            color = "white"
-            bg = "red"
-
-        click.secho(prefix + self.format(record), fg=color, bg=bg)
-
-
-@click.command("lambda")
+@cli.command("function", aliases=["func"])
 @click.option(
     "-u/-b", "--upload/--no-upload",
     default=True,
@@ -49,18 +27,12 @@ class ClickLogger(logging.Handler):
     help="Optionally specify the name of the output zip. If this is not specified, a temporary file is used instead.",
 )
 @click.option("-w/-s", "--wait/--skip", default=True, help="Wait for the new code to be valid.")
-@click.option("-p", "--profile", default="default", help="The AWS CLI profile to use if available.")
-@click.option("-r", "--region", default=None, help="The AWS region to use.")
-@click.option("--aws_access_key_id", default=None)
-@click.option("--aws_secret_access_key", default=None)
-@click.option("--aws_session_token", default=None)
 @click.option("-f", "--force", is_flag=True, default=False, help="Bypass confirmation and safety prompts.")
-@click.option("-q", "--quiet", count=True, default=0, help="Only print warnings and errors.")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="Increase output information.")
-@click.help_option("-h", "--help")
 @click.argument("function")
 @click.argument("source", type=click.Path(exists=True, resolve_path=True, path_type=Path))
-def cli(
+@click.pass_context
+def function_cli(
+    ctx: CLIContext,
     function: str,
     source: Path,
     *,
@@ -70,33 +42,17 @@ def cli(
     aws_s3_key: OPT_STR,
     out: typing.Optional[Path],
     wait: bool,
-    profile: str,
-    region: OPT_STR,
-    aws_access_key_id: OPT_STR,
-    aws_secret_access_key: OPT_STR,
-    aws_session_token: OPT_STR,
     force: bool,
-    quiet: int,
-    verbose: bool,
 ) -> None:
     """
     Build and optionally upload AWS Lambda function code.
+    Alias: "func"
 
     Function: The AWS function name or ARN.
 
     Source: The source code to be uploaded. If this is a file, it is added at the root of the zip.
     If it is a directory, the content of the directory is added at the root of the zip.
     """
-    logger.parent.addHandler(ClickLogger())
-    level = logging.INFO
-    if verbose:
-        level = logging.DEBUG
-    elif quiet > 0:
-        level = logging.WARNING if quiet == 1 else logging.ERROR
-
-    logger.parent.setLevel(level)
-    logger.debug(f"Set log level to {logging.getLevelName(logger.getEffectiveLevel())}")
-
     # Input sanity checks
     if not upload and out is None:
         raise click.UsageError("When uploading is not enabled, you must specify an output file (--out).")
@@ -121,13 +77,7 @@ def cli(
     logger.info(f"Built zip: {result.absolute().as_posix()}")
 
     # Validate the connection
-    client = Session(
-        profile_name=profile,
-        region_name=region,
-        aws_session_token=aws_session_token,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-    ).client("lambda")
+    client = ctx.obj.session.client("lambda")
 
     # Validate the function
     try:
@@ -150,7 +100,3 @@ def cli(
         raise click.ClickException(f"Function update did not succeed with status: {status}")
 
     logger.info("All done!")
-
-
-if __name__ == "__main__":
-    cli.main()

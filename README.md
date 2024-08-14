@@ -29,27 +29,33 @@ See section 9 of the license for details.
 
 ### Examples
 <a id="examples"></a>
+- Show CLI version
+```shell
+lambda -V
+```
+
+- Use a cli profile called `work`, and act on the `eu-central-1` region:
+```shell
+lambda --profile work --region eu-central-1 <subcommand>
+```
+Type `lambda --help` for more authentication options.
+
 - Build, upload, and publish `main.py` to the function `Test`:
 ```shell
-lambda Test main.py --publish
+lambda function Test main.py --publish
 ```
 
 - Use an S3 bucket called `resources`:
 ```shell
-lambda Test main.py --aws_s3_bucket resources
+lambda function Test main.py --aws_s3_bucket resources
 ```
 
 - Upload a project folder:
 ```shell
-lambda Test src
-```
-
-- Use a cli profile called `work`, and upload to the `eu-central-1` region:
-```shell
-lambda Test main.py --profile work --region eu-central-1
+lambda function Test src
 ```
 
 - Build locally, and keep the output file without uploading:
 ```shell
-lambda Test main.py --out out.zip --no-upload
+lambda function Test main.py --out out.zip --no-upload
 ```
