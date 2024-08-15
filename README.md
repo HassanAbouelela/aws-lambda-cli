@@ -40,6 +40,14 @@ lambda --profile work --region eu-central-1 <subcommand>
 ```
 Type `lambda --help` for more authentication options.
 
+- Configure default parameters (such as authentication) to be used with all the following commands:
+  This saves the configuration to file in the user's home directory. 
+  See `lambda config --help` for more details.
+```shell
+lambda config set --profile work --region eu-central-1
+lambda function Test main.py # Using profile work and region eu-central-1 
+```
+
 - Build, upload, and publish `main.py` to the function `Test`:
 ```shell
 lambda function Test main.py --publish
@@ -47,7 +55,7 @@ lambda function Test main.py --publish
 
 - Use an S3 bucket called `resources`:
 ```shell
-lambda function Test main.py --aws_s3_bucket resources
+lambda function Test main.py --aws-s3-bucket resources
 ```
 
 - Upload a project folder:

@@ -1,3 +1,5 @@
+import dataclasses
+import json
 import logging
 import typing
 from pathlib import Path
@@ -96,6 +98,93 @@ class CLIContext(Context):
         force: bool = False
 
     obj: ContextObject
+
+
+@dataclasses.dataclass
+class ConfigEntry:
+    profile_name: OPT_STR = None
+    region_name: OPT_STR = None
+    aws_access_key_id: OPT_STR = None
+    aws_secret_access_key: OPT_STR = None
+    aws_session_token: OPT_STR = None
+
+    def dump_instance(self) -> dict:
+        # Convert to dict
+        data = dataclasses.asdict(self)
+
+        # Remove unnecessary data
+        for key in list(data.keys()):
+            if data[key] is None:
+                data.pop(key)
+
+        return data
+
+    @staticmethod
+    def dump_json(config: CONFIG_TYPE, indent=4) -> str:
+        result = {}
+        for path, entry in config.items():
+            result[path.absolute().as_posix()] = entry.dump_instance()
+        return json.dumps(result, indent=indent)
+
+    @staticmethod
+    def load_json(config: str) -> CONFIG_TYPE:
+        try:
+            data = json.loads(config)
+        except json.JSONDecodeError as e:
+            msg = (
+                f"Failed to read the configuration file as valid JSON. Please check the file.\n{CONFIG_FILE.absolute()}"
+            )
+            logger.error(msg, exc_info=e)
+            raise click.ClickException(msg)
+
+        result = {}
+        for item, value in data.items():
+            try:
+                result[Path(item).expanduser().absolute()] = ConfigEntry(**value)
+            except Exception as e:
+                msg = f"Failed to read configuration entry for '{item}'."
+                logger.error(msg, exc_info=e)
+                raise click.ClickException(msg)
+
+        return result
+
+
+def safe_read_config(
+    msg: OPT_STR = "Configuration file does not exist, nothing to do.",
+) -> typing.Optional[CONFIG_TYPE]:
+    if not CONFIG_FILE.exists():
+        if msg is not None:
+            logger.info(msg)
+        return None
+
+    try:
+        raw = CONFIG_FILE.read_text("utf-8")
+    except Exception as e:
+        logger.error("Failed to read config file.", exc_info=e)
+        raise click.ClickException("Failed to read the configuration file.")
+
+    return ConfigEntry.load_json(raw)
+
+
+def get_effective_config(
+    config: CONFIG_TYPE = None, path: Path = Path.cwd(), *, parents=True
+) -> typing.Optional[tuple[Path, ConfigEntry]]:
+    if config is None:
+        config = safe_read_config(None)
+        if config is None:
+            return None
+
+    path = path.expanduser().absolute()
+    if path in config:
+        return path, config[path]
+
+    if not parents:
+        return None
+
+    for parent in path.parents:
+        parent = parent.absolute()
+        if parent in config:
+            return parent, config[parent]
 
 
 def __force(ctx: CLIContext, _param, value: typing.Optional[bool]) -> bool:
