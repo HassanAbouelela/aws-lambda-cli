@@ -6,7 +6,8 @@ from pathlib import Path
 import click
 
 from aws_lambda_cli import build, utils
-from aws_lambda_cli.cli.root import CLIContext, OPT_STR, cli
+from aws_lambda_cli.cli.root import cli
+from aws_lambda_cli.cli.utils import CLIContext, FORCE_OPTION, OPT_STR
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +19,8 @@ logger = logging.getLogger(__name__)
     help="Upload the build result to AWS. Defaults to true.",
 )
 @click.option("--publish", is_flag=True, default=False, help="Publish a new function version.")
-@click.option("--aws_s3_bucket", default=None)
-@click.option("--aws_s3_key", default=None)
+@click.option("--aws-s3-bucket", default=None)
+@click.option("--aws-s3-key", default=None)
 @click.option(
     "-o", "--out",
     default=None,
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
     help="Optionally specify the name of the output zip. If this is not specified, a temporary file is used instead.",
 )
 @click.option("-w/-s", "--wait/--skip", default=True, help="Wait for the new code to be valid.")
-@click.option("-f", "--force", is_flag=True, default=False, help="Bypass confirmation and safety prompts.")
+@FORCE_OPTION
 @click.argument("function")
 @click.argument("source", type=click.Path(exists=True, resolve_path=True, path_type=Path))
 @click.pass_context
