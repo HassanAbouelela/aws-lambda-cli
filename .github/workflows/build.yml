@@ -1,0 +1,45 @@
+on:
+    workflow_call:
+        outputs:
+            artifact:
+                description: Distribution files.
+                value: ${{ jobs.build.outputs.artifact }}
+            version:
+                description: CLI version.
+                value: ${{ jobs.build.outputs.version }}
+
+jobs:
+    build:
+        name: Build distributable artifacts
+        runs-on: ubuntu-latest
+        outputs:
+            artifact: steps.info.outputs.artifact
+            version: steps.info.outputs.version
+
+        steps:
+            - name: Install Python Dependencies
+              uses: HassanAbouelela/actions/setup-python@setup-python_v1.6.0
+              with:
+                  install_args: "--only main"
+                  python_version: "3.8"
+
+            - name: Build python package
+              run: poetry build -o dist
+
+            - name: Read version
+              id: info
+              run: |
+                  VERSION=$(poetry version -s)
+                  ARTIFACT_NAME="lambda-${{ github.ref_name }}-$VERSION-$(openssl rand -hex 8)"
+
+                  echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+                  echo "artifact=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+                  echo "Version: $VERSION"
+                  echo "Artifact: $ARTIFACT_NAME"
+
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: "${{ steps.info.outputs.artifact }}"
+                  path: ./dist
+                  if-no-files-found: error
